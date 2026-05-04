@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import confetti from 'canvas-confetti'
+import { play, playApplauseOnce, startBg } from '../audio/audioManager'
 
 function WinnerReveal({ winner, onReset }) {
   const [visible, setVisible] = useState(false)
@@ -8,8 +9,18 @@ function WinnerReveal({ winner, onReset }) {
     const t = setTimeout(() => {
       setVisible(true)
       fireConfetti()
+      play('victory')
+      play('confetti')
+      setTimeout(() => play('confetti'), 700)
     }, 400)
-    return () => clearTimeout(t)
+
+    const stopApplause = playApplauseOnce()
+
+    return () => {
+      clearTimeout(t)
+      stopApplause()
+      startBg() // garante que a música volta ao sair da tela
+    }
   }, [])
 
   const fireConfetti = () => {

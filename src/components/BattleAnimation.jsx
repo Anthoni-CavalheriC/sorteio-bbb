@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { play, startLoop, stopLoop, fadeOutLoop, stopAllLoops, stopBg } from '../audio/audioManager'
 
 const PHASE = {
   ENTERING: 'entering',
@@ -100,12 +101,27 @@ function BattleAnimation({ participants, provas, onComplete }) {
   }
 
   useEffect(() => {
+    // Som de card entrando para cada participante, sincronizado com a animação CSS
+    participants.forEach((_, i) => {
+      addTimeout(() => play('card-enter'), i * 100)
+    })
+
     addTimeout(() => setShowTitle(true), 600)
 
     addTimeout(() => {
       setPhase(PHASE.SHAKING)
       setShowFlash(true)
       setTimeout(() => setShowFlash(false), 600)
+
+      // Para música de fundo e toca trovão
+      stopBg()
+      play('thunder')
+
+      // Multidão + tambores começam logo após o trovão
+      addTimeout(() => {
+        startLoop('crowd-battle')
+        startLoop('drums')
+      }, 500)
 
       let i = 0
       const maxMessages = Math.floor(SHAKE_DURATION / SHAKE_INTERVAL) - 1
@@ -125,7 +141,10 @@ function BattleAnimation({ participants, provas, onComplete }) {
       startEliminating()
     }, ENTER_DURATION + SHAKE_DURATION)
 
-    return () => timeouts.current.forEach(clearTimeout)
+    return () => {
+      timeouts.current.forEach(clearTimeout)
+      stopAllLoops()
+    }
   }, [])
 
   const startEliminating = () => {
@@ -134,6 +153,10 @@ function BattleAnimation({ participants, provas, onComplete }) {
     const next = () => {
       if (index >= toEliminate.current.length) {
         const w = winner.current
+        // Para loops e toca comemoração
+        fadeOutLoop('crowd-battle', 800)
+        fadeOutLoop('drums', 800)
+        addTimeout(() => play('celebration-small'), 300)
         showCommentary(`👑 ${w.name} é ${w.pronoun === 'f' ? 'a nova' : 'o novo'} LÍDER!`)
         addTimeout(() => onComplete(w), 2000)
         return
@@ -149,6 +172,9 @@ function BattleAnimation({ participants, provas, onComplete }) {
       addTimeout(() => {
         setHighlighted(null)
         setBeingEliminated(victim.id)
+
+        // Som de eliminação: multidão aleatória
+        play(`elimination-crowd-${Math.ceil(Math.random() * 3)}`)
 
         addTimeout(() => {
           setEliminated((prev) => new Set([...prev, victim.id]))

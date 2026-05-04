@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AddParticipantModal from './AddParticipantModal'
+import { play } from '../audio/audioManager'
 
 const STORAGE_KEY = 'bbb-participants-v1'
 
@@ -19,6 +20,8 @@ function SelectionScreen({ onStart }) {
   }, [participants])
 
   const toggleParticipant = (id) => {
+    const participant = participants.find((p) => p.id === id)
+    play(participant?.active ? 'toggle-off' : 'toggle-on')
     setParticipants((prev) =>
       prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p))
     )
